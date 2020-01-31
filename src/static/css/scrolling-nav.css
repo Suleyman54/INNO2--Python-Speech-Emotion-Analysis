@@ -16,10 +16,16 @@ section {
 }
 
 .kleur {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
     background-color: #ee3023 !important;
 }
 
-img{
-
+.center {
+    margin: auto;
+    width: 50%;
+    padding: 10px;
 }
 

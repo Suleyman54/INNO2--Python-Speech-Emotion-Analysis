@@ -53,7 +53,7 @@ def split_wav(file_name):
             # Export the audio chunk with new bitrate.
             print("Exporting chunk{0}.wav.".format(i))
             normalized_chunk.export(
-                "Testbestanden/test/chunk{0}.wav".format(i),
+                "audio/temp_frag/chunk{0}.wav".format(i),
                 bitrate="192k",
                 format="wav"
             )

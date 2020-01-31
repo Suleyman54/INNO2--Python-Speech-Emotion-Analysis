@@ -1,103 +1,58 @@
-import os
-import random
-import io
+import json
 
-from io import StringIO
+from flask import Flask, render_template, jsonify, request
+#from werkzeug.utils import secure_filename
+import base64, os
 
-import numpy as np
-from flask import Flask, render_template, request, Response
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib import pyplot as plt
-from Ziggo.backend.backend_prediction import predict
-from Ziggo.backend.audio_converter import convert
-import pandas
-APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-
+import utils.audio_converter as audio_converter
+import utils.backend_prediction2 as backend_prediction
+import utils.wav_splitter as wav_splitter
+UPLOAD_FOLDER = os.path.abspath('audio/temp_file')
 app = Flask(__name__)
 
-posts = [
-    {
-        'author': 'Corey Schafer',
-        'title': 'Blog Post 1',
-        'content': 'First post content',
-        'date_posted': 'April 20, 2018'
-    },
-    {
-        'author': 'Jane Doe',
-        'title': 'Blog Post 2',
-        'content': 'Second post content',
-        'date_posted': 'April 21, 2018'
-    }
-]
-a = []
-b = []
-a,b = predict()
-
+@app.route("/index")
 @app.route("/")
 def home():
-    return render_template('home.html', posts=posts)
+    return render_template("index.html", content="Testing")
 
-@app.route("/about")
-def about():
-    return render_template('about.html', title='About')
 
-@app.route("/home", methods=['POST'])
+@app.route("/upload")
 def upload():
-    #hier maakt die een map aan waar die de file in opslaat
-    '''target = os.path.join(APP_ROOT, 'audio/temp/')
-    print('hallo ' + target)
+    return render_template("upload.html", content="Testing")
 
-    if not os.path.isdir(target):
-        os.mkdir(target)
-    for file in request.files.getlist("file"):
-        print(file)
-        filename = file.filename
-        print(type(filename))
-        #als het bestand een wav file is, sla het dan op in target map
-        destination = "/".join([target, filename])
-        print(destination)
-        file.save(destination)
-        convert(filename,destination,target)
-        predict()'''
-    return render_template("about.html")
+@app.route("/results", methods=['GET', 'POST'])
+def results():
+    strength = 0
+    if request.method == 'POST':
+        EmptyFolders()
+        upload_file = request.files['file']
+        filename = upload_file.filename
+        upload_file.save(os.path.join(UPLOAD_FOLDER, filename))
+        filename_string = filename[0:-4] + '.wav'
+        audio_converter.convert(UPLOAD_FOLDER)
+        wav_splitter.split_wav(os.path.join(UPLOAD_FOLDER, filename_string))
+        emotions = backend_prediction.predict()
+        JsonEmotions = json.dumps(emotions)
+        return render_template("result.html", emotions=JsonEmotions)
+    emotions = {1: {0: 0.1391668035154432, 1: 0.7964834200029145, 2: 0.06434983061626554},
+                2: {0: 0.00013751742802270428, 1: 0.7425724177355733, 2: 0.2572900280356407},
+                3: {0: 0.019632020175777143, 1: 0.14060649648308754, 2: 0.8397614769637585},
+                4: {0: 0.018558258232587832, 1: 0.8604737868445227, 2: 0.12096796929836273},
+                5: {0: 0.012431997416570084, 1: 0.15321613289415836, 2: 0.8343518078327179}}
+    jsonEmotions = json.dumps(emotions)
 
-@app.route('/plot.png')
-def plot_png():
-    fig = create_figure()
-    output = io.BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
+    return render_template("result.html", emotions=jsonEmotions, strengthvar=strength)
+    # return "Error"
 
-def create_figure():
-    file1 = open("C:/Users/wesac/Downloads/Ziggo/Ziggo/backend/txtlist/list.txt", "r")
-    file_str = file1.readline()
-    file_str2 = file_str[1:-1]
-    print(file_str2)
-    list2 = str.split(file_str2, ",")
-    list_final = []
-    for i in list2:
-        list_final.append(float(i))
-
-    fig = Figure()
-    axis = fig.add_subplot(1, 1, 1)
-    ys = list_final
-    xs = range(len(ys))
-    axis.plot(xs, ys)
-    return fig
-
-@app.route('/test')
-def chartTest():
-    return render_template('about.html', name = 'new_plot')
-
-@app.route("/test2")
-def chart():
-    labels = ["January","February","March","April","May","June","July","August"]
-    values = [10,9,8,7,6,4,7,8]
-    colors = [ "#F7464A", "#46BFBD", "#FDB45C", "#FEDCBA","#ABCDEF", "#DDDDDD", "#ABCABC"  ]
-    return render_template('chart.html', set=zip(values, labels, colors))
+def EmptyFolders():
+    fragsFolder = "audio/temp_frag"
+    filesFolder = "audio/temp_file"
+    for root, dirs, files in os.walk(fragsFolder):
+        for file in files:
+            os.remove(os.path.join(root, file))
+    for root, dirs, files in os.walk(filesFolder):
+        for file in files:
+            os.remove(os.path.join(root, file))
 
 if __name__ == "__main__":
-    app.debug = True
-    app.run()
+    app.run(host="127.0.0.1", port=5000, debug=True, threaded=True)

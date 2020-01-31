@@ -1,14 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Upload</title>
-</head>
-<body>
-<H1>File upload</H1>
-<form id="upload-form" action= "{{ url_for('upload')}}" method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" accept="audio/*" multiple>
-    <input type="submit" value="send">
-</form>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Home page{% endblock %}
+
+{% block content %}
+    <h1>Test upload bestand</h1>
+    <div class="col-lg-10 mx-auto " style="padding-top: 100px">
+    <form method="POST" enctype="multipart/form-data" action="/results">
+        <input type="file" name=file class="form-control"><br>
+        <input type="submit" style="color:black;" value="upload">
+    </form>
+    </div>
+{% endblock %}

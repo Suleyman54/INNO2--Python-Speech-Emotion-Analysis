@@ -50,7 +50,6 @@ import urllib
 import subprocess
 import os
 import time
-import psutil
 from joblib import Parallel, delayed
 import signal
 
